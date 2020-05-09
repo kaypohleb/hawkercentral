@@ -5,6 +5,7 @@ import firebase from "./Firestore";
 import { Form, Button, Modal, Spinner } from "react-bootstrap";
 import { db } from "./Firestore";
 import driver from "../driver.png";
+import question from "../question.png";
 import store_address from "../store_address.png";
 import delivery_address from "../delivery_address.png";
 import summary from "../summary.png";
@@ -19,26 +20,6 @@ const analytics = firebase.analytics();
 function onLoad(name) {
   analytics.logEvent(name);
 }
-// function distance_calc(lat1, lon1, lat2, lon2) {
-//   if (lat1 === lat2 && lon1 === lon2) {
-//     return 0;
-//   } else {
-//     var radlat1 = (Math.PI * lat1) / 180;
-//     var radlat2 = (Math.PI * lat2) / 180;
-//     var theta = lon1 - lon2;
-//     var radtheta = (Math.PI * theta) / 180;
-//     var dist =
-//       Math.sin(radlat1) * Math.sin(radlat2) +
-//       Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-//     if (dist > 1) {
-//       dist = 1;
-//     }
-//     dist = Math.acos(dist);
-//     dist = (dist * 180) / Math.PI;
-//     dist = dist * 60 * 1.1515;
-//     return dist * 1.609344;
-//   }
-// }
 
 const dayName = [
   "Monday",
@@ -92,6 +73,8 @@ const addData = async ({
   contact_to,
   time,
   note,
+  arrival,
+  duration,
 }) => {
   let now = new Date();
   var field = {
@@ -114,6 +97,8 @@ const addData = async ({
     note: note,
     expired: false,
     cancelled: false,
+    arrival: arrival,
+    duration: duration,
   };
   let id = await db
     .collection("deliveries")
@@ -176,7 +161,7 @@ export class Driver extends React.Component {
       "destination=" +
       this.state.street_to +
       "&departure_time=" +
-      parseInt(this.state.time.valueOf()/1000) +
+      parseInt(this.state.time.valueOf() / 1000) +
       "&" +
       "key=" +
       API_KEY;
@@ -321,6 +306,20 @@ export class Driver extends React.Component {
     cookies.set("unit", this.state.unit, { path: "/" });
     cookies.set("contact", this.state.contact, { path: "/" });
     cookies.set("note", this.state.note, { path: "/" });
+    var arrival = new Date(this.state.time);
+    arrival.setMinutes(
+      arrival.getMinutes() +
+        15 +
+        this.state.directions.routes[0].legs[0].duration.value / 60
+    );
+    arrival =
+      dayName[arrival.getDay()] +
+      " " +
+      arrival.getDate() +
+      " " +
+      monthNames[arrival.getMonth()] +
+      " " +
+      formatAMPM(arrival);
     await addData({
       origin: this.state.street,
       destination: this.state.street_to,
@@ -340,6 +339,8 @@ export class Driver extends React.Component {
       contact_to: this.state.contact_to,
       time: this.state.time,
       note: this.state.note,
+      arrival: arrival,
+      duration: this.state.directions.routes[0].legs[0].duration.text,
     }).then((id) => {
       this.sendData({
         origin: this.state.street,
@@ -357,7 +358,8 @@ export class Driver extends React.Component {
           monthNames[this.state.time.getMonth()] +
           " " +
           formatAMPM(this.state.time),
-        duration: this.state.directions.routes[0].legs[0].duration.text
+        duration: this.state.directions.routes[0].legs[0].duration.text,
+        arrival: arrival,
       });
       this.setState({ submitted: true, submitting: false });
     });
@@ -404,6 +406,19 @@ export class Driver extends React.Component {
   };
 
   render() {
+    var arrival;
+    if (
+      this.state.retrievedDir &&
+      this.state.directions &&
+      this.state.directions.routes.length > 0
+    ) {
+      arrival = new Date(this.state.time);
+      arrival.setMinutes(
+        arrival.getMinutes() +
+          15 +
+          this.state.directions.routes[0].legs[0].duration.value / 60
+      );
+    }
     return (
       <div>
         <Modal
@@ -447,43 +462,28 @@ export class Driver extends React.Component {
                   alt=""
                   style={{ width: "100%", height: "100%" }}
                 />
-
-                <div
-                  onClick={() => this.setShow()}
-                  class="d-flex justify-content-center align-items-center"
-                  style={{
-                    border: "2px solid",
-                    color: "white",
-                    width: "130px",
-                    height: "40px",
-                    alignText: "center",
-                    alignItems: "center",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    marginTop: "12px",
-                    backgroundColor: "#b48300",
-                    borderColor: "black",
-                  }}
-                >
-                  {
-                    <svg
-                      class="bi bi-question-circle"
-                      width="3em"
-                      height="3em"
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{ paddingLeft: "7px" }}
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M8 15A7 7 0 108 1a7 7 0 000 14zm0 1A8 8 0 108 0a8 8 0 000 16z"
-                        clip-rule="evenodd"
-                      />
-                      <path d="M5.25 6.033h1.32c0-.781.458-1.384 1.36-1.384.685 0 1.313.343 1.313 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.007.463h1.307v-.355c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.326 0-2.786.647-2.754 2.533zm1.562 5.516c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z" />
-                    </svg>
-                  }{" "}
-                  <div style={{ padding: "10px" }}>What is DriverLeh?</div>
+                <div class="row" style={{ marginTop: "10px" }}>
+                  <div style={{ padding: "10px", width: "100%" }}>
+                    <hr
+                      style={{
+                        color: "orange",
+                        backgroundColor: "orange",
+                        height: 5,
+                        width: "50%"
+                      }}
+                    />
+                    Now, everyone can deliver <br /> Find out more: <br />
+                    <img
+                      onClick={() => this.setShow()}
+                      style={{
+                        cursor: "pointer",
+                        height: "40px",
+                        width: "34px",
+                      }}
+                      src={question}
+                      alt="question"
+                    />
+                  </div>
                 </div>
                 <div
                   class="card shadow row"
@@ -783,19 +783,37 @@ export class Driver extends React.Component {
                                   fontSize: "20px",
                                 }}
                               >
-                                <b>Distance (Google Maps): </b>
+                                <b>Distance 距离 (Google Maps): </b>
                                 <br />
                                 {this.state.directions.routes.length > 0
                                   ? this.state.directions.routes[0].legs[0]
                                       .distance.text
                                   : null}
                                 <br />
-                                <b>Estimated Duration: </b>
+                                <b>Est. Duration 预测行程时间: </b>
                                 <br />
                                 {this.state.directions.routes.length > 0
                                   ? this.state.directions.routes[0].legs[0]
                                       .duration.text
                                   : null}
+                                <br />
+                                <b>
+                                  Arrival Time 预测到达时间 <br />{" "}
+                                  <small style={{ color: "grey" }}>
+                                    (Pickup Time + Duration + 15 min):
+                                  </small>
+                                </b>
+                                <br />
+                                {this.state.directions.routes.length > 0
+                                  ? dayName[arrival.getDay()] +
+                                    " " +
+                                    arrival.getDate() +
+                                    " " +
+                                    monthNames[arrival.getMonth()] +
+                                    " " +
+                                    formatAMPM(arrival)
+                                  : null}
+
                                 <br />
                                 <b>Delivery Cost: </b>
                                 <br />

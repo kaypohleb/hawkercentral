@@ -95,6 +95,7 @@ exports.telegramSend = functions
       var cancel = "www.foodleh.app/delivery?cancel=" + id;
       var requester_mobile = req.body.requester_mobile;
       var duration = req.body.duration
+      var arrival = req.body.arrival
       var message =
         "<b>New Order Received</b> \n" +
         "<b>From: </b> <a href='https://maps.google.com/?q=" +
@@ -116,6 +117,9 @@ exports.telegramSend = functions
         "<b>Est. Duration: </b>" +
         duration +
         "\n" +
+        "<b>Est. Arrival: </b>" +
+        arrival +
+        "\n" +
         "<b>Click to Accept (first come first serve): </b>" +
         url +
         "\n (request expires 30 minutes before pickup)";
@@ -127,7 +131,7 @@ exports.telegramSend = functions
       twilio.messages
         .create({
           body:
-            "Your request has been received and will expire 30 minutes before pickup time. To cancel your request, please go to link below.  我们已收到您的要求。若在取食物的三十分钟之前没有司机接受，您的要求并会自动取消。若您要马上取消，请到以下链接：" +
+            "Request received & expire 30 minutes before pickup.  我们已收到您的要求并在取食物时间的三十分钟前自动取消. To Cancel 马上取消: " +
             cancel +
             ".",
           from: "+12015847715",
@@ -174,6 +178,7 @@ exports.telegramEdit = functions
         : null;
       var note = req.body.note ? req.body.note : null;
       var cost = req.body.cost ? req.body.cost : null;
+      var arrival = req.body.arrival ? req.body.arrival : null;
 
       twilio.messages
         .create({
@@ -195,11 +200,11 @@ exports.telegramEdit = functions
       twilio.messages
         .create({
           body:
-            "Your order has been confirmed. \n " +
-            "Stall Contact: +65" +
+            "Order Confirmed: "+time+" \n " +
+            "Stall: " +
             requester_mobile +
             "\n" +
-            "Customer Mobile: +65" +
+            "Customer: " +
             customer_mobile +
             "\n" +
             "From: " +
@@ -208,10 +213,11 @@ exports.telegramEdit = functions
             "To: " +
             destination +
             "\n" +
-            "Pickup Time: " +
-            time +
             "\n" +
-            "Delivery Fee: $" +
+            "ETA: " +
+            arrival +
+            "\n" +
+            "Delivery: $" +
             cost +
             "\n" +
             "Note: " +

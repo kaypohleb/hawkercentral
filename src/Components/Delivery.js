@@ -105,7 +105,7 @@ export class Delivery extends React.Component {
   }
 
   componentWillMount() {
-    onLoad("find_driver");
+    onLoad("find_delivery");
     if (this.state.cancel) {
       this.cancelDoc();
     }
@@ -165,6 +165,7 @@ export class Delivery extends React.Component {
                     : null,
                 note: snapshot.data().note,
                 cost: snapshot.data().cost,
+                arrival: snapshot.data().arrival
               });
             });
         }
@@ -404,7 +405,7 @@ export class Delivery extends React.Component {
                             <br />
                             {this.state.data.time ? (
                               <div>
-                                <b>Pickup Time:</b> <br />
+                                <b>Pickup Time:</b>
                                 {dayName[
                                   this.state.data.time.toDate().getDay()
                                 ] +
@@ -422,6 +423,19 @@ export class Delivery extends React.Component {
                             <br />
                             <b>Distance:</b> {this.state.data.distance}
                             <br />
+                            {this.state.data.duration ? (
+                              <div>
+                                <b>Est. Duration:</b> {this.state.data.duration}
+                                <br />{" "}
+                              </div>
+                            ) : null}
+                            {this.state.data.arrival ? (
+                              <div>
+                                <b>Est. Arrival Time:</b>{" "}
+                                {this.state.data.arrival}
+                                <br />{" "}
+                              </div>
+                            ) : null}
                             <b>Estimated Fee:</b> ${this.state.data.cost}
                             <br /> <br />
                             <b>
